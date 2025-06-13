@@ -1,0 +1,199 @@
+version: '3'
+
+vars:
+  DB_URL: "postgresql://postgres:12345@localhost:5433/items?sslmode=disable"
+  DB_NAME: "items"
+  DB_USER: "postgres"
+  DB_PASSWORD: "12345"
+  DB_HOST: "localhost"
+  DB_PORT: "5433"
+
+tasks:
+  default:
+    desc: "Show available tasks"
+    cmds:
+      - task --list
+
+  # Database tasks
+  db:up:
+    desc: "Start PostgreSQL and Redpanda with Docker Compose"
+    cmds:
+      - docker compose up -d
+    silent: false
+
+  db:down:
+    desc: "Stop PostgreSQL and Redpanda"
+    cmds:
+      - docker compose down
+    silent: false
+
+  db:logs:
+    desc: "Show database logs"
+    cmds:
+      - docker compose logs -f postgres
+
+  db:clean:
+    desc: "Stop containers and remove volumes"
+    cmds:
+      - docker compose down -v
+      - docker volume prune -f
+
+  # Atlas-go migration tasks
+  atlas:install:
+    desc: "Install Atlas CLI (if not already installed)"
+    cmds:
+      - |
+        if ! command -v atlas &> /dev/null; then
+          echo "Installing Atlas CLI..."
+          curl -sSf https://atlasgo.sh | sh
+        else
+          echo "Atlas CLI already installed"
+        fi
+    silent: false
+
+  atlas:migrate:apply:
+    desc: "Apply migrations using Atlas"
+    deps: [db:up]
+    cmds:
+      - atlas migrate apply --url "{{.DB_URL}}" --dir "file://migrations"
+    silent: false
+
+  atlas:migrate:status:
+    desc: "Check migration status"
+    cmds:
+      - atlas migrate status --url "{{.DB_URL}}" --dir "file://migrations"
+    silent: false
+
+  atlas:schema:apply:
+    desc: "Apply schema changes from schema.hcl"
+    deps: [db:up]
+    cmds:
+      - atlas schema apply --url "{{.DB_URL}}" --to "file://schema.hcl" --dev-url "docker://postgres/15/dev?search_path=public"
+    silent: false
+
+  atlas:schema:diff:
+    desc: "Show diff between current database and schema.hcl"
+    cmds:
+      - atlas schema diff --from "{{.DB_URL}}" --to "file://schema.hcl" --dev-url "docker://postgres/15/dev?search_path=public"
+    silent: false
+
+  atlas:schema:inspect:
+    desc: "Inspect current database schema"
+    cmds:
+      - atlas schema inspect --url "{{.DB_URL}}"
+    silent: false
+
+  atlas:migrate:new:
+    desc: "Create a new migration file"
+    cmds:
+      - |
+        if [ -z "{{.CLI_ARGS}}" ]; then
+          echo "Usage: task atlas:migrate:new -- migration_name"
+          exit 1
+        fi
+        atlas migrate new {{.CLI_ARGS}} --dir "file://migrations"
+    silent: false
+
+  atlas:migrate:hash:
+    desc: "Re-hash migration directory"
+    cmds:
+      - atlas migrate hash --dir "file://migrations"
+    silent: false
+
+  # Server tasks
+  server:run:
+    desc: "Run the Scala server"
+    deps: [db:up]
+    cmds:
+      - sbt run
+    silent: false
+
+  server:compile:
+    desc: "Compile the Scala project"
+    cmds:
+      - sbt compile
+    silent: false
+
+  server:test:
+    desc: "Run tests"
+    deps: [db:up]
+    cmds:
+      - sbt test
+    silent: false
+
+  server:clean:
+    desc: "Clean build artifacts"
+    cmds:
+      - sbt clean
+    silent: false
+
+  # Development workflow tasks
+  dev:setup:
+    desc: "Set up development environment"
+    cmds:
+      - task: atlas:install
+      - task: db:up
+      - task: atlas:schema:apply
+      - echo "Development environment ready!"
+    silent: false
+
+  dev:reset:
+    desc: "Reset development environment"
+    cmds:
+      - task: db:clean
+      - task: db:up
+      - task: atlas:schema:apply
+      - echo "Development environment reset!"
+    silent: false
+
+  dev:start:
+    desc: "Start development environment and run server"
+    cmds:
+      - task: dev:setup
+      - task: server:run
+    silent: false
+
+  # Code quality tasks
+  format:
+    desc: "Format Scala code"
+    cmds:
+      - sbt scalafmtAll
+    silent: false
+
+  format:check:
+    desc: "Check code formatting"
+    cmds:
+      - sbt scalafmtCheckAll
+    silent: false
+
+  deps:update:
+    desc: "Check for dependency updates"
+    cmds:
+      - sbt dependencyUpdate
+    silent: false
+
+  # Utility tasks
+  logs:
+    desc: "Show application logs"
+    cmds:
+      - docker compose logs -f
+
+  health:
+    desc: "Check service health"
+    cmds:
+      - |
+        echo "Checking PostgreSQL..."
+        docker compose ps postgres
+        echo "Checking Redpanda..."  
+        docker compose ps redpanda
+        echo "Checking database connection..."
+        docker compose exec postgres pg_isready -U {{.DB_USER}} -d {{.DB_NAME}}
+    silent: false
+
+  clean:all:
+    desc: "Clean everything (Docker containers, volumes, build artifacts)"
+    cmds:
+      - task: server:clean
+      - task: db:clean
+      - echo "All cleaned up!"
+    silent: false
