@@ -8,6 +8,10 @@ vars:
   DB_HOST: "localhost"
   DB_PORT: "5433"
 
+  ATLAS_DIR: src/main/resources/atlas
+  ATLAS_SCHEMA_FILE: '{{ .ATLAS_DIR }}/schema.pg.hcl'
+  ATLAS_MIGRATIONS_DIR: '{{ .ATLAS_DIR }}/migrations'
+
 tasks:
   default:
     desc: "Show available tasks"
@@ -19,6 +23,8 @@ tasks:
     desc: "Start PostgreSQL and Redpanda with Docker Compose"
     cmds:
       - docker compose up -d
+      - while ! docker compose exec postgres pg_isready -U {{.DB_USER}} -d {{.DB_NAME}}; do sleep 1; done
+      - echo "PostgreSQL is ready"
     silent: false
 
   db:down:
@@ -56,8 +62,8 @@ tasks:
     cmds:
       - |
           atlas migrate diff create_users \
-            --dir "file://migrations" \
-            --to "file://schema.pg.hcl" \
+            --dir "file://{{ .ATLAS_MIGRATION_DIRS }}" \
+            --to "file://{{ .ATLAS_SCHEMA_FILE }}" \
             --dev-url "docker://postgres/15/dev?search_path=public"
     silent: false
   
@@ -66,7 +72,7 @@ tasks:
     cmds:
       - |
           atlas migrate apply \
-            --dir file://migrations \
+            --dir file://{{ .ATLAS_SCHEMA_FILE }} \
             --url "docker://postgres/15/dev?search_path=public"
 
   # Server tasks
@@ -76,6 +82,7 @@ tasks:
     cmds:
       - sbt run
     silent: false
+    interactive: true
 
   server:compile:
     desc: "Compile the Scala project"

@@ -1,0 +1,11 @@
+@dev/setup:
+    just dev/atlas-install
+    just dev/db-up
+    just dev/atlas-apply
+    echo "Development environment ready!"
+
+@dev/reset:
+    just dev/db-clean
+    just dev/db-up
+    just dev/atlas-apply
+    echo "Development environment reset!"
