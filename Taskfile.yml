@@ -51,54 +51,23 @@ tasks:
         fi
     silent: false
 
-  atlas:migrate:apply:
-    desc: "Apply migrations using Atlas"
-    deps: [db:up]
-    cmds:
-      - atlas migrate apply --url "{{.DB_URL}}" --dir "file://migrations"
-    silent: false
-
-  atlas:migrate:status:
-    desc: "Check migration status"
-    cmds:
-      - atlas migrate status --url "{{.DB_URL}}" --dir "file://migrations"
-    silent: false
-
-  atlas:schema:apply:
-    desc: "Apply schema changes from schema.hcl"
-    deps: [db:up]
-    cmds:
-      - atlas schema apply --url "{{.DB_URL}}" --to "file://schema.hcl" --dev-url "docker://postgres/15/dev?search_path=public"
-    silent: false
-
-  atlas:schema:diff:
-    desc: "Show diff between current database and schema.hcl"
-    cmds:
-      - atlas schema diff --from "{{.DB_URL}}" --to "file://schema.hcl" --dev-url "docker://postgres/15/dev?search_path=public"
-    silent: false
-
-  atlas:schema:inspect:
-    desc: "Inspect current database schema"
-    cmds:
-      - atlas schema inspect --url "{{.DB_URL}}"
-    silent: false
-
-  atlas:migrate:new:
-    desc: "Create a new migration file"
+  atlas:diff:
+    desc: "Creates migrations by diffing the database schema and our HCL definition"
     cmds:
       - |
-        if [ -z "{{.CLI_ARGS}}" ]; then
-          echo "Usage: task atlas:migrate:new -- migration_name"
-          exit 1
-        fi
-        atlas migrate new {{.CLI_ARGS}} --dir "file://migrations"
+          atlas migrate diff create_users \
+            --dir "file://migrations" \
+            --to "file://schema.pg.hcl" \
+            --dev-url "docker://postgres/15/dev?search_path=public"
     silent: false
-
-  atlas:migrate:hash:
-    desc: "Re-hash migration directory"
+  
+  atlas:apply:
+    desc: "Applies migrations"
     cmds:
-      - atlas migrate hash --dir "file://migrations"
-    silent: false
+      - |
+          atlas migrate apply \
+            --dir file://migrations \
+            --url "docker://postgres/15/dev?search_path=public"
 
   # Server tasks
   server:run:
