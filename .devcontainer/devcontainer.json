@@ -30,6 +30,13 @@
 		"ariga.atlas-hcl",
 		"nefrob.vscode-just-syntax"
 	],
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"version": "27.5.1",
+			"enableNonRootDocker": "true",
+			"moby": "true"
+		}
+	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": ["1337", "1338", "1339"]
 	// Use 'postCreateCommand' to run commands after the container is created.
