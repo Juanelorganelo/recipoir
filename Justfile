@@ -42,22 +42,25 @@ atlas_migrations_dir := atlas_dir + "/migrations"
     docker compose down
 
 [doc("Removes the docker containers and volumes")]
-@db-nuke force:
+db-nuke force="":
     #!/usr/bin/env bash
-    set -euox pipefail
+    set -euo pipefail
 
     # just db-nuke force will trigger this
     if [ "{{ force }}" == "force" ]; then
         docker compose down -v
-    else
+    elif [[ -z "{{ force }}" ]]; then
         echo "Are you sure? This will delete all data in your local database"
         select strictreply in "Yes" "No"; do
             relaxedreply=${strictreply:-$REPLY}
             case $relaxedreply in
                 Yes | yes | y ) docker compose down -v ; break ;;
                 No  | no  | n ) exit ;;
+                * ) echo "Invalid reply $relaxedreply" ;;
             esac
         done
+    else
+        echo "Invalid argument provided to db-nuke. Accepted values are 'force' or the empty string"
     fi
 
 
