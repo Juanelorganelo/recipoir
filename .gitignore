@@ -10,6 +10,6 @@ logs/
 .metals/
 .vscode/
 .bloop/
-postgres-data/
+postgres/
 sbt-launch.jar
 .env
