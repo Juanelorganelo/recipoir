@@ -1,11 +1,13 @@
-# ZIO 2 + Scala 3 project template
+# Recipoir
+The starting template for the Recipoir application, an open-source fitness tracker for regular folk. Recipoir is and always will be completely open-source. Anyway, you can find the instructions for 
+
+## ZIO 2 + Scala 3 project template
 
 This project can be used as a starting point for a ZIO 2 + Scala 3 web service with public, private and internal APIs served on different ports. The architecture is 3 layered - Domain, Implementation and API layers. The Domain layer should be used for business logic only, the Implementation should hold the actual implementation (e.g. code that interacts with Postgres or Kafka) and the API layer is responsible for http communication with the outside world.
 
 ## Notable dependencies
 
 - Chimney (transformations between domain / dto / dao objects)
-- Flyway (database migrations)
 - zio-http
 - zio-json
 - zio-kafka
