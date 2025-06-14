@@ -99,12 +99,11 @@ atlas_migrations_dir := atlas_dir + "/migrations"
 @deps-update:
     sbt dependencyUpdate
 
-[doc("Show container logs")]
-@logs-all:
-    docker compose logs -f
+@_logs service="":
+    docker compose logs -f {{ service }}
 
-[doc("Clean all build artifacts and containers")]
-@clean-all:
-    just server-clean
-    just compose-clean
-    echo "All cleaned up!"
+[doc("Show logs from all containers")]
+@logs-all: _logs
+
+[doc("Show database logs")]
+@logs-db: (_logs "postgres")
