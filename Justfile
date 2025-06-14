@@ -1,34 +1,26 @@
+set dotenv-required
+
 db_url := "postgresql://postgres:12345@localhost:5433/items?sslmode=disable"
 db_name := "items"
 db_user := "postgres"
 db_password := "12345"
 db_host := "localhost"
 db_port := "5433"
-atlas_dir := "src/main/resources/atlas"
+atlas_dir := "src/main/resources"
 atlas_schema_file := atlas_dir + "/schema.pg.hcl"
-atlas_migrations_dir := atlas_dir + "/migrations"
 
 # The default task i.e. gets run with `just`
-@_default: help
-
-# Wait for required app services to be ready
-@_wait-services:
-    #!/usr/bin/env bash
-    set -euox pipefail
-    # Add the redpanda stuff when we need to.    
-    while ! docker compose exec postgres pg_isready -U {{ db_user }} -d {{ db_name }}; do
-        sleep 1
-    done
+_default: help
 
 [doc("Show available tasks")]
-@help:
+help:
     just --list
 
 [doc("Start our PostgreSQL server")]
-@db-up:
+db-up:
     #!/usr/bin/env bash
-    set -euox pipefail
-    docker compose up -d
+    set -euo pipefail
+    docker compose run -d postgres
     while ! docker compose \
         exec postgres pg_isready \
         -U {{ db_user }} -d {{ db_name }}
@@ -38,8 +30,8 @@ atlas_migrations_dir := atlas_dir + "/migrations"
     echo "PostgreSQL is ready"
 
 [doc("Stop our PostgreSQL server")]
-@db-down:
-    docker compose down
+db-down:
+    docker compose kill --remove-orphans postgres
 
 [doc("Removes the docker containers and volumes")]
 db-nuke force="":
@@ -63,50 +55,29 @@ db-nuke force="":
         echo "Invalid argument provided to db-nuke. Accepted values are 'force' or the empty string"
     fi
 
-
-[doc("Creates migrations by diffing the database schema and our HCL definition")]
-@atlas-diff:
-    atlas migrate diff create_users \
-        --dir "file://{{ atlas_migrations_dir }}" \
-        --to "file://{{ atlas_schema_file }}" \
-        --dev-url "docker://postgres/15/dev?search_path=public"
-
 [doc("Applies migrations")]
-@atlas-apply:
-    atlas migrate apply \
-        --dir "file://{{ atlas_schema_file }}" \
-        --url "docker://postgres/15/dev?search_path=public"
+dev-atlas-apply +args="":
+    atlas schema apply \
+        --to "file://{{ atlas_schema_file }}" \
+        --url "$DB_URL" {{ args }}
 
 [doc("Set up development environment and run the application")]
-@dev:
-    #!/usr/bin/env bash
-    just compose-up atlas-apply
-    echo "Development environment ready!"
-    sbt
-
-[doc("Reset development environment")]
-@dev-reset:
-    #!/usr/bin/env bash
-    set -ex pipefail
-
-    just compose-clean
-    just compose-up
-    just atlas-apply
-    echo "Development environment reset!"
+dev:
+    sbt run --watch
 
 [doc("Check code formatting")]
-@format-check:
+format-check:
     sbt scalafmtCheckAll
 
 [doc("Update dependencies")]
-@deps-update:
+deps-update:
     sbt dependencyUpdate
 
-@_logs service="":
+_logs service="":
     docker compose logs -f {{ service }}
 
 [doc("Show logs from all containers")]
-@logs-all: _logs
+logs-all: _logs
 
 [doc("Show database logs")]
-@logs-db: (_logs "postgres")
+logs-db: (_logs "postgres")
