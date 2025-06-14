@@ -59,10 +59,10 @@ db-nuke force="":
 dev-atlas-apply +args="":
     atlas schema apply \
         --to "file://{{ atlas_schema_file }}" \
-        --url "$DB_URL" {{ args }}
+        --url "$ATLAS_URL" {{ args }}
 
 [doc("Set up development environment and run the application")]
-dev:
+dev: db-up dev-atlas-apply
     sbt run --watch
 
 [doc("Check code formatting")]
