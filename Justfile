@@ -8,41 +8,58 @@ atlas_dir := "src/main/resources/atlas"
 atlas_schema_file := atlas_dir + "/schema.pg.hcl"
 atlas_migrations_dir := atlas_dir + "/migrations"
 
+# The default task i.e. gets run with `just`
+@_default: help
+
+# Wait for required app services to be ready
+@_wait-services:
+    #!/usr/bin/env bash
+    set -euox pipefail
+    # Add the redpanda stuff when we need to.    
+    while ! docker compose exec postgres pg_isready -U {{ db_user }} -d {{ db_name }}; do
+        sleep 1
+    done
+
 [doc("Show available tasks")]
-@default:
+@help:
     just --list
 
-[doc("Start PostgreSQL and Redpanda with Docker Compose")]
-@services-up:
+[doc("Start our PostgreSQL server")]
+@db-up:
     #!/usr/bin/env bash
-    is_ready() {
-        docker compose exec postgres pg_isready -U {{ db_user }} -d {{ db_name }}
-    }
-    
+    set -euox pipefail
     docker compose up -d
-    while ! is_ready; do
+    while ! docker compose \
+        exec postgres pg_isready \
+        -U {{ db_user }} -d {{ db_name }}
+    do
         sleep 1
     done
     echo "PostgreSQL is ready"
 
-[doc("Stop PostgreSQL and Redpanda with Docker Compose")]
-@services-down:
+[doc("Stop our PostgreSQL server")]
+@db-down:
     docker compose down
 
 [doc("Removes the docker containers and volumes")]
-@services-clean:
-    docker compose down -v
-    docker volume prune -f
-
-[doc("Install Atlas CLI")]
-@atlas-install:
+@db-nuke force:
     #!/usr/bin/env bash
-    if ! command -v atlas &> /dev/null; then
-        echo "Installing Atlas CLI..."
-        curl -sSf https://atlasgo.sh | sh
+    set -euox pipefail
+
+    # just db-nuke force will trigger this
+    if [ "{{ force }}" == "force" ]; then
+        docker compose down -v
     else
-        echo "Atlas CLI already installed"
+        echo "Are you sure? This will delete all data in your local database"
+        select strictreply in "Yes" "No"; do
+            relaxedreply=${strictreply:-$REPLY}
+            case $relaxedreply in
+                Yes | yes | y ) docker compose down -v ; break ;;
+                No  | no  | n ) exit ;;
+            esac
+        done
     fi
+
 
 [doc("Creates migrations by diffing the database schema and our HCL definition")]
 @atlas-diff:
@@ -57,25 +74,12 @@ atlas_migrations_dir := atlas_dir + "/migrations"
         --dir "file://{{ atlas_schema_file }}" \
         --url "docker://postgres/15/dev?search_path=public"
 
-[doc("Run the server")]
-@server-run:
-    sbt run
-
-[doc("Run server tests")]
-@server-test:
-    sbt test
-
-[doc("Clean server build artifacts")]
-@server-clean:
-    sbt clean
-
-[doc("Set up development environment")]
-@dev-setup:
+[doc("Set up development environment and run the application")]
+@dev:
     #!/usr/bin/env bash
-    just atlas-install
-    just compose-up
-    just atlas-apply
+    just compose-up atlas-apply
     echo "Development environment ready!"
+    sbt
 
 [doc("Reset development environment")]
 @dev-reset:
@@ -96,7 +100,7 @@ atlas_migrations_dir := atlas_dir + "/migrations"
     sbt dependencyUpdate
 
 [doc("Show container logs")]
-@logs:
+@logs-all:
     docker compose logs -f
 
 [doc("Clean all build artifacts and containers")]
