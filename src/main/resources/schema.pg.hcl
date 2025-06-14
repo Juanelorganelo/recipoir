@@ -1,7 +1,7 @@
-schema "recipoir_users" {}
+schema "recipoir" {}
 
 table "users" {
-  schema = schema.recipoir_users
+  schema = schema.recipoir
 
   column "id" {
     null = false
@@ -34,7 +34,7 @@ table "users" {
 }
 
 table "backup_codes" {
-  schema = schema.recipoir_users
+  schema = schema.recipoir
 
   column "id" {
     null = false
