@@ -1,0 +1,39 @@
+{
+	"name": "Recipoir",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+            "JAVA_VERSION": "21"
+			// "NODE_VERSION": "lts/*"
+		}
+	},
+	// Set *default* container specific settings.json values on container create.
+	"settings": {
+		"terminal.integrated.profiles.linux": {
+			"bash": {
+				"path": "/bin/bash"
+			},
+			"sbt": {
+				"path": "/bin/bash",
+				"args": [
+					"sbt"
+				]
+			}
+		},
+		"terminal.integrated.defaultProfile.linux": "bash",
+		"java.jdt.ls.java.home": "/docker-java-home"
+	},
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"vscjava.vscode-java-pack",
+		"scalameta.metals",
+		"ariga.atlas-hcl",
+		"nefrob.vscode-just-syntax"
+	],
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": ["1337", "1338", "1339"]
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "java -version",
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	//"remoteUser": "vscode"
+}
