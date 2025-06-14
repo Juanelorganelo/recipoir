@@ -1,5 +1,4 @@
 # run with "docker compose up -d"
-version: '3.7'
 
 services:
   postgres:
