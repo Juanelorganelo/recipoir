@@ -19,6 +19,10 @@ alias tear := down
 [doc("Tear down development environment and server")]
 down: services-down
 
+[doc("Builds the entire application")]
+build:
+    sbt compile
+
 [doc("Start development external services")]
 services-up:
     #!/usr/bin/env bash
