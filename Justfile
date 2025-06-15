@@ -14,10 +14,10 @@ help:
 db-up:
     #!/usr/bin/env bash
     set -euo pipefail
-    docker compose run --remove-orphans -d postgres
+    docker compose run --service-ports --remove-orphans -d postgres
     while ! docker compose \
         exec postgres pg_isready \
-        -U $DB_USER -d $DB_NAME
+        -U $DB_USER -d $DB_SCHEMA
     do
         sleep 1
     done
@@ -35,6 +35,7 @@ db-nuke force="":
     # just db-nuke force will trigger this
     if [ "{{ force }}" == "force" ]; then
         docker compose down -v
+        rm -rf postgres
     elif [[ -z "{{ force }}" ]]; then
         echo "Are you sure? This will delete all data in your local database"
         select strictreply in "Yes" "No"; do
@@ -46,12 +47,9 @@ db-nuke force="":
             esac
         done
     else
-        echo "Invalid argument provided to db-nuke. Accepted values are 'force' or the empty string"
+        echo "Invalid argument provided to db-nuke. Accepted values are 'force' or the empty string. Got '{{ force }}'."
     fi
 
-[doc("Shuts down dev containers and servers")]
-dev-clean:
-    docker compose down
 
 [doc("Applies migrations")]
 dev-atlas-apply +args="":
