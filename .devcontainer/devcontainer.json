@@ -37,5 +37,14 @@
 		}
 	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [1337, 1338, 1339, 5433, 5432]
+	"forwardPorts": [
+		// Public api
+		1337,
+		// Private api
+		1338,
+		// Internal api
+		1339,
+		// Postgres
+		5433
+	]
 }
