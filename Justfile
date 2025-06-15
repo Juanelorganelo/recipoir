@@ -20,7 +20,7 @@ help:
 db-up:
     #!/usr/bin/env bash
     set -euo pipefail
-    docker compose run -d postgres
+    docker compose run --remove-orphans -d postgres
     while ! docker compose \
         exec postgres pg_isready \
         -U {{ db_user }} -d {{ db_name }}
