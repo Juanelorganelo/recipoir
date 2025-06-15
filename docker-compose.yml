@@ -11,4 +11,4 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_SCHEMA}
     ports:
-      - "5433:5432"
+      - ${DB_MAPPED_PORT}:5432
