@@ -10,64 +10,74 @@ _default: help
 help:
     just --list
 
-[doc("Start our PostgreSQL server")]
-db-up:
+alias dev := up
+[doc("Set up development environment and run the application")]
+up: services-up migrate-apply
+    sbt ~run
+
+alias tear := down
+[doc("Tear down development environment and server")]
+down: services-down
+
+[doc("Start development external services")]
+services-up:
     #!/usr/bin/env bash
     set -euo pipefail
-    docker compose run --service-ports --remove-orphans -d postgres
-    while ! docker compose \
-        exec postgres pg_isready \
-        -U $DB_USER -d $DB_NAME
-    do
+    docker compose up -d
+    while ! docker compose exec postgres pg_isready -U $DB_USER -d $DB_NAME; do
         sleep 1
     done
     echo "PostgreSQL is ready"
 
 [doc("Stop our PostgreSQL server")]
-db-down:
-    docker compose kill --remove-orphans postgres
+services-down:
+    docker compose down
 
 [doc("Removes the docker containers and volumes")]
-db-nuke force="":
+services-nuke force="":
     #!/usr/bin/env bash
     set -euo pipefail
 
-    # just db-nuke force will trigger this
-    if [ "{{ force }}" == "force" ]; then
+    nuke() {
         docker compose down -v
-        rm -rf postgres
+    }
+
+    # just services-nuke force will trigger this
+    if [ "{{ force }}" == "force" ]; then
+        nuke
     elif [[ -z "{{ force }}" ]]; then
         echo "Are you sure? This will delete all data in your local database"
         select strictreply in "Yes" "No"; do
             relaxedreply=${strictreply:-$REPLY}
             case $relaxedreply in
-                Yes | yes | y ) docker compose down -v ; break ;;
+                Yes | yes | y ) nuke ; break ;;
                 No  | no  | n ) exit ;;
                 * ) echo "Invalid reply $relaxedreply" ;;
             esac
         done
     else
-        echo "Invalid argument provided to db-nuke. Accepted values are 'force' or the empty string. Got '{{ force }}'."
+        echo "Invalid argument provided to services-nuke. Accepted values are 'force' or the empty string. Got '{{ force }}'."
     fi
 
+[doc("Creates SQL migrations by diffing the Atlas schema and the DB schema")]
+migrate-diff +args="":
+    atlas schema diff \
+        --to "file://{{ atlas_schema_file }}" \
+        --url "$DB_URL" {{ args }}
 
-[doc("Applies migrations")]
-dev-atlas-apply +args="":
+[doc("Applies database migrations")]
+migrate-apply +args="":
     atlas schema apply \
         --to "file://{{ atlas_schema_file }}" \
         --url "$DB_URL" {{ args }}
 
-[doc("Set up development environment and run the application")]
-dev: db-up dev-atlas-apply
-    sbt run --watch
+[doc("Format the code with scalafmt")]
+format:
+    sbt scalafmtAll
 
 [doc("Check code formatting")]
 format-check:
     sbt scalafmtCheckAll
-
-[doc("Update dependencies")]
-deps-update:
-    sbt dependencyUpdate
 
 _logs service="":
     docker compose logs -f {{ service }}
