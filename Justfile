@@ -17,7 +17,7 @@ db-up:
     docker compose run --service-ports --remove-orphans -d postgres
     while ! docker compose \
         exec postgres pg_isready \
-        -U $DB_USER -d $DB_SCHEMA
+        -U $DB_USER -d $DB_NAME
     do
         sleep 1
     done
