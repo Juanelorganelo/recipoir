@@ -1,11 +1,5 @@
 set dotenv-required
 
-db_url := "postgresql://postgres:12345@localhost:5433/items?sslmode=disable"
-db_name := "items"
-db_user := "postgres"
-db_password := "12345"
-db_host := "localhost"
-db_port := "5433"
 atlas_dir := "src/main/resources"
 atlas_schema_file := atlas_dir + "/schema.pg.hcl"
 
@@ -23,7 +17,7 @@ db-up:
     docker compose run --remove-orphans -d postgres
     while ! docker compose \
         exec postgres pg_isready \
-        -U {{ db_user }} -d {{ db_name }}
+        -U $DB_USER -d $DB_NAME
     do
         sleep 1
     done
@@ -55,11 +49,15 @@ db-nuke force="":
         echo "Invalid argument provided to db-nuke. Accepted values are 'force' or the empty string"
     fi
 
+[doc("Shuts down dev containers and servers")]
+dev-clean:
+    docker compose down
+
 [doc("Applies migrations")]
 dev-atlas-apply +args="":
     atlas schema apply \
         --to "file://{{ atlas_schema_file }}" \
-        --url "$ATLAS_URL" {{ args }}
+        --url "$DB_URL" {{ args }}
 
 [doc("Set up development environment and run the application")]
 dev: db-up dev-atlas-apply
