@@ -43,8 +43,7 @@ object ZioApp extends ZIOAppDefault:
       )
 
   override val run: UIO[ExitCode] =
-    (Migration.run *>
-      ZIO.raceFirst(publicApiProgram(1337), privateApiProgram(1338) :: internalApiProgram(1339) :: Nil))
+    (ZIO.raceFirst(publicApiProgram(1337), privateApiProgram(1338) :: internalApiProgram(1339) :: Nil))
       .provide(
         AppConfig.layer >+>
           (implementation.layer >+> domain.layer >>> (PublicApiHandler.layer ++ PrivateApiHandler.layer ++ InternalApiHandler.layer))
