@@ -1,8 +1,6 @@
 package io.recipoir.zioapp
 package domain
 
-sealed trait ValidationStatus
-
-object ValidationStatus:
-  case object Validated    extends ValidationStatus
-  case object NonValidated extends ValidationStatus
+enum ValidationStatus:
+  case Validated    extends ValidationStatus
+  case NonValidated extends ValidationStatus
