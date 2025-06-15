@@ -1,6 +1,5 @@
 val zioVersion            = "2.1.19"
 val zioHttpVersion        = "3.0.1"
-val zioKafkaVersion       = "2.8.2"
 val zioJsonVersion        = "0.7.7"
 val zioPreludeVersion     = "1.0.0-RC41"
 val zioConfigVersion      = "4.0.4"
@@ -38,7 +37,6 @@ lazy val root = (project in file("."))
       "org.flywaydb"   % "flyway-database-postgresql" % flywayVersion,
       "dev.zio"       %% "zio"                        % zioVersion,
       "dev.zio"       %% "zio-http"                   % zioHttpVersion,
-      "dev.zio"       %% "zio-kafka"                  % zioKafkaVersion,
       "dev.zio"       %% "zio-config"                 % zioConfigVersion,
       "dev.zio"       %% "zio-config-typesafe"        % zioConfigVersion,
       "dev.zio"       %% "zio-config-magnolia"        % zioConfigVersion,

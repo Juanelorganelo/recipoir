@@ -1,18 +1,17 @@
 package io.recipoir.zioapp
 package implementation
 
-import zio.RLayer
+import zio.*
 
-import domain.events.EventPublisher
 import domain.item.ItemRepository
+import domain.events.EventPublisher
+import implementation.events.NoOpEventPublisher
+import implementation.postgres.{ ItemRepositoryImplementation, PostgresDataSource, DbConfig }
 import implementation.auth.AuthService
-import implementation.kafka.{ EventPublisherImplementation, KafkaConfig }
 
 import javax.sql.DataSource
 
-import postgres.*
-
 type ImplementationEnv = AuthService & ItemRepository & EventPublisher
 
-val layer: RLayer[DbConfig & KafkaConfig, ImplementationEnv] =
-  PostgresDataSource.layer >>> ItemRepositoryImplementation.layer ++ AuthService.layer ++ EventPublisherImplementation.layer
+val layer: RLayer[DbConfig, ImplementationEnv] =
+  PostgresDataSource.layer >>> ItemRepositoryImplementation.layer ++ AuthService.layer ++ NoOpEventPublisher.layer
