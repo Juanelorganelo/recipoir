@@ -4,7 +4,6 @@
 		"dockerfile": "Dockerfile",
 		"args": {
             "JAVA_VERSION": "21"
-			// "NODE_VERSION": "lts/*"
 		}
 	},
 	// Set *default* container specific settings.json values on container create.
@@ -38,9 +37,5 @@
 		}
 	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": ["1337", "1338", "1339"]
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "java -version",
-	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	//"remoteUser": "vscode"
+	"forwardPorts": [1337, 1338, 1339, 5433, 5432]
 }
